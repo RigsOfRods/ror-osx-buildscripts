@@ -31,6 +31,7 @@ unzip -o ogredeps.zip
 cd cabalistic-ogredeps-*
 cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING= \
 -DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
+-DOGREDEPS_BUILD_CG:BOOL=TRUE \
 .
 make $ROR_MAKEOPTS
 make install
@@ -40,15 +41,25 @@ cd "$ROR_SOURCE_DIR"
 wget -c -O ogre.zip http://bitbucket.org/sinbad/ogre/get/v1-8.zip
 unzip -o ogre.zip
 cd sinbad-ogre-*
+
+#remove OSX 10.5 stuff
+sed -i.bak 's/# Set 10.5 as the base SDK by default//g' CMakeLists.txt
+sed -i.bak 's/set(XCODE_ATTRIBUTE_SDKROOT macosx)//g' CMakeLists.txt
+sed -i.bak 's/set(CMAKE_OSX_SYSROOT macosx)//g' CMakeLists.txt
+sed -i.bak 's/set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)//g' CMakeLists.txt
+
 cmake -DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
 -DCMAKE_BUILD_TYPE:STRING=Release \
+-DOGRE_STATIC=1 \
 -DOGRE_BUILD_SAMPLES:BOOL=OFF .
 make $ROR_MAKEOPTS
 make install
 
+
 PKG_CONFIG_PATH="$ROR_INSTALL_DIR/lib/pkgconfig"
 
 #OpenAL Soft
+cd "$ROR_SOURCE_DIR"
 wget -c http://kcat.strangesoft.net/openal-releases/openal-soft-1.16.0.tar.bz2
 tar -xvf openal-soft-*.tar.bz2
 cd openal-soft-*
