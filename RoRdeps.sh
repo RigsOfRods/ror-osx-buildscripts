@@ -1,8 +1,11 @@
 #!/bin/sh
 
 # Initialization
-set -eu
+#set -eu   some commands show errors which don't affect the build
 . ./config
+
+# install build tools
+xcode-select --install
 
 if [ ! -e "$ROR_SOURCE_DIR" ]; then
   mkdir -p "$ROR_SOURCE_DIR"
@@ -14,15 +17,9 @@ if [ brew —-version 2>/dev/null ]; then
 fi
 
 # install dependencies available in brew repositories
-brew install wget pkgconfig cmake git boost
+brew install wget pkgconfig cmake git boost wxwidgets openal-soft
 
 # compile missing dependencies
-# wxWidgets (only required for configurator, does not build on OS X 10.10)
-#wget https://github.com/wxWidgets/wxWidgets/archive/WX_3_0_2.zip
-#unzip WX_*.zip
-#cd wxWidgets-*
-#./configure
-#make $ROR_MAKEOPTS
 
 # dependencies of OGRE
 cd "$ROR_SOURCE_DIR"
@@ -30,6 +27,7 @@ wget —c O ogredeps.zip https://bitbucket.org/cabalistic/ogredeps/get/tip.zip
 unzip -o ogredeps.zip
 cd cabalistic-ogredeps-*
 cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING= \
+-DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
 -DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
 -DOGREDEPS_BUILD_CG:BOOL=TRUE \
 .
@@ -42,11 +40,9 @@ wget -c -O ogre.zip http://bitbucket.org/sinbad/ogre/get/v1-8.zip
 unzip -o ogre.zip
 cd sinbad-ogre-*
 
-#remove OSX 10.5 stuff
-sed -i.bak 's/# Set 10.5 as the base SDK by default//g' CMakeLists.txt
-sed -i.bak 's/set(XCODE_ATTRIBUTE_SDKROOT macosx)//g' CMakeLists.txt
-sed -i.bak 's/set(CMAKE_OSX_SYSROOT macosx)//g' CMakeLists.txt
-sed -i.bak 's/set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)//g' CMakeLists.txt
+# Apply patch for OS X 10.10
+wget https://gist.github.com/Hiradur/a5573323ae2701bef6bc/download
+patch -p1 < ogre1.8osx.patch
 
 cmake -DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
 -DCMAKE_BUILD_TYPE:STRING=Release \
@@ -58,14 +54,14 @@ make install
 
 PKG_CONFIG_PATH="$ROR_INSTALL_DIR/lib/pkgconfig"
 
-#OpenAL Soft
-cd "$ROR_SOURCE_DIR"
-wget -c http://kcat.strangesoft.net/openal-releases/openal-soft-1.16.0.tar.bz2
-tar -xvf openal-soft-*.tar.bz2
-cd openal-soft-*
-cmake .
-make $ROR_MAKEOPTS
-make install
+#OpenAL Soft (only required if the one from brew doesn't work)
+#cd "$ROR_SOURCE_DIR"
+#wget -c http://kcat.strangesoft.net/openal-releases/openal-soft-1.16.0.tar.bz2
+#tar -xvf openal-soft-*.tar.bz2
+#cd openal-soft-*
+#cmake .
+#make $ROR_MAKEOPTS
+#make install
 
 #MyGUI (needs specific revision)
 cd "$ROR_SOURCE_DIR"
@@ -73,6 +69,7 @@ wget -c -O mygui.zip https://github.com/MyGUI/mygui/archive/a790944c344c686805d0
 unzip -o mygui.zip
 cd mygui-*
 cmake -DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
+-DMYGUI_STATIC:BOOL=ON \
 -DCMAKE_BUILD_TYPE:STRING=Release \
 -DMYGUI_BUILD_DEMOS:BOOL=OFF \
 -DMYGUI_BUILD_DOCS:BOOL=OFF \
