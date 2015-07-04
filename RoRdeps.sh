@@ -19,7 +19,8 @@ if [ brew —-version 2>/dev/null ]; then
 fi
 
 # install dependencies available in brew repositories
-brew install wget pkgconfig cmake boost wxwidgets openal-soft mercurial
+brew install wget pkgconfig cmake wxwidgets openal-soft mercurial
+brew install boost --c++11
 
 # compile missing dependencies
 
@@ -29,9 +30,14 @@ if [ ! -e ogredeps ]; then
   hg clone https://bitbucket.org/cabalistic/ogredeps
 fi
 cd ogredeps
-hg pull
-cmake -DCMAKE_OSX_DEPLOYMENT_TARGET= \
--DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \.
+hg pull && hg update
+# remove OSX_DEPLOYMENT_TARGET so we can build with libc++ (requires 10.7+)
+sed -i .orig 's/set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)//g' CMakeLists.txt
+cmake \
+-DCMAKE_OSX_DEPLOYMENT_TARGET= \
+-DCMAKE_CXX_FLAGS="-stdlib=libc++ -std=c++11" \
+-DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
+.
 make $ROR_MAKEOPTS
 make install
 
@@ -41,8 +47,9 @@ if [ ! -e ogre ]; then
   hg clone https://bitbucket.org/sinbad/ogre -b v2-0
 fi
 cd ogre
-hg pull
+hg pull && hg update
 cmake \
+-DCMAKE_CXX_FLAGS="-stdlib=libc++ -std=c++11" \
 -DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
 -DFREETYPE_INCLUDE_DIR=/usr/include/freetype2/ \
 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -60,6 +67,7 @@ git checkout ogre2
 git pull
 cmake \
 -DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
+-DCMAKE_CXX_FLAGS="-stdlib=libc++ -std=c++11" \
 -DFREETYPE_INCLUDE_DIR=/usr/include/freetype2/ \
 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 -DMYGUI_BUILD_DEMOS:BOOL=OFF \
@@ -70,13 +78,13 @@ cmake \
 make $ROR_MAKEOPTS
 make install
 
-#MySocketW
+# MySocketW
 cd "$ROR_SOURCE_DIR"
 if [ ! -e mysocketw ]; then
   git clone https://github.com/Hiradur/mysocketw.git
 fi
 cd mysocketw
 git pull
-sed -i '/^PREFIX *=/d' Makefile.conf
-make $ROR_MAKEOPTS shared
-PREFIX="$ROR_INSTALL_DIR" make install
+sed -i .orig '/^PREFIX *=/d' Makefile.conf
+make CXXFLAGS="-stdlib=libc++ -std=c++11" $ROR_MAKEOPTS dylib
+PREFIX="$ROR_INSTALL_DIR" make installosx
