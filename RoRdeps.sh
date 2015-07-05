@@ -5,7 +5,7 @@ set -eu
 . ./config
 
 # install build tools if not already installed
-if  xcode-select —-version 2>/dev/null ]; then
+if [ xcode-select --version 2>/dev/null ]; then
   xcode-select --install
 fi
 
@@ -14,7 +14,7 @@ if [ ! -e "$ROR_SOURCE_DIR" ]; then
 fi
 
 # install brew if not already installed
-if [ brew —-version 2>/dev/null ]; then
+if [ brew --version 2>/dev/null ]; then
   ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 fi
 
