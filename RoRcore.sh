@@ -7,16 +7,15 @@ if [ ! -e rigs-of-rods ]; then
   git clone https://github.com/RigsOfRods/rigs-of-rods.git
 fi
 cd rigs-of-rods
-git checkout Ogre-2.0
 git pull
 
 cmake \
 -DCMAKE_INSTALL_PREFIX="$ROR_INSTALL_DIR" \
--DROR_USE_MYGUI="TRUE" \
--DROR_USE_OPENAL="TRUE" \
--DROR_USE_SOCKETW="TRUE" \
+-DOis_INCLUDE_DIRS=$ROR_INSTALL_DIR/include/OIS \
+-DOis_LIBRARIES=$ROR_INSTALL_DIR/lib/libOIS.a \
+-DROR_BUILD_CONFIGURATOR=OFF \
 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
--DCMAKE_CXX_FLAGS="-pipe -march=native" \
+-DCMAKE_CXX_FLAGS="-pipe -march=native -stdlib=libc++ -std=c++11 -DNOLANG" \
 .
 
 # CMAKE_CXX_FLAGS (flags for compiler) - Default are:
@@ -28,7 +27,7 @@ cmake \
 
 
 make $ROR_MAKEOPTS
-sed -i '/^PluginFolder=/d' bin/plugins.cfg
+sed -i .orig '/^PluginFolder=/d' bin/plugins.cfg
 echo "PluginFolder=$ROR_INSTALL_DIR/lib/OGRE" >>bin/plugins.cfg
 
 # there's no make install target, so just copy the bin folder
